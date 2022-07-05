@@ -67,7 +67,7 @@ project(":core") {
         implementation 'com.github.czyzby:gdx-lml-vis:1.9.1.9.6'
         implementation 'com.google.inject:guice:5.1.0'
         implementation 'com.google.code.gson:gson:2.9.0'
-        implementation 'io.netty:netty-all:4.1.52.Final'
+        implementation 'kryonet:kryonet:2.21-2'
         implementation 'log4j:log4j:1.2.17'
     }
 }

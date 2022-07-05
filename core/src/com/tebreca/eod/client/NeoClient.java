@@ -44,7 +44,7 @@ public class NeoClient extends SimpleChannelInboundHandler<AbstractMessage> {
 
 
     public void connect(String ip, int port){
-       future = bootstrap.connect(ip, port);
+       future = bootstrap.connect(ip, port +1);
        channel = future.channel();
        channel.write(new ConnectMessage(injector, userID, username));
     }

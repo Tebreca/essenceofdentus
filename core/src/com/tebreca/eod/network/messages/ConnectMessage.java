@@ -3,7 +3,6 @@ package com.tebreca.eod.network.messages;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.tebreca.eod.network.AbstractMessage;
-import io.netty.buffer.ByteBuf;
 
 import java.nio.charset.StandardCharsets;
 
@@ -36,22 +35,6 @@ public class ConnectMessage extends AbstractMessage {
     @Override
     public String getID() {
         return "connect";
-    }
-
-    @Override
-    public void read(ByteBuf buf) {
-        short length = buf.readShort();
-        userId = buf.toString(buf.readerIndex(), buf.readerIndex() + length, StandardCharsets.UTF_8);
-        length = buf.readShort();
-        username = buf.toString(buf.readerIndex(), buf.readerIndex() + length, StandardCharsets.UTF_8);
-    }
-
-    @Override
-    protected void writeMessage(ByteBuf buf) {
-        buf.writeShort(userId.length());
-        buf.writeBytes(userId.getBytes(StandardCharsets.UTF_8));
-        buf.writeShort(username.length());
-        buf.writeBytes(username.getBytes(StandardCharsets.UTF_8));
     }
 
     @Override
@@ -94,19 +77,7 @@ public class ConnectMessage extends AbstractMessage {
         public String getID() {
             return "connect-r";
         }
-
-        @Override
-        protected void writeMessage(ByteBuf buf) {
-            buf.writeInt(timeoutLenght);
-            buf.writeShort(status.ordinal());
-        }
-
-        @Override
-        public void read(ByteBuf buf) {
-            timeoutLenght = buf.readInt();
-            status = Status.values()[buf.readShort()];
-        }
-
+        
         public static Response ok(){
             return new Response(injector, Status.OK);
         }
