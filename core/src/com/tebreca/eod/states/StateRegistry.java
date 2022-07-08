@@ -2,17 +2,15 @@ package com.tebreca.eod.states;
 
 import com.tebreca.eod.App;
 import com.tebreca.eod.helper.HashRegistry;
-import com.tebreca.eod.helper.RegistryHandler;
+import com.tebreca.eod.states.impl.LobbyState;
 import com.tebreca.eod.states.impl.MainMenuState;
+import com.tebreca.eod.states.impl.SettingsState;
 
 public class StateRegistry extends HashRegistry<IGameState> {
 
 
     public static final StateRegistry INSTANCE = new StateRegistry();
 
-    static {
-        RegistryHandler.subscribe(StateRegistry::addEntries, IGameState.class);
-    }
 
     @Override
     protected IGameState[] createArray(int size) {
@@ -24,9 +22,11 @@ public class StateRegistry extends HashRegistry<IGameState> {
         return IGameState.class;
     }
 
-
-    private static void addEntries(StateRegistry stateRegistry) {
-        stateRegistry.register(App.injector.getInstance(MainMenuState.class));
+    @Override
+    public void addEntries() {
+        register(App.injector.getInstance(MainMenuState.class));
+        register(App.injector.getInstance(SettingsState.class));
+        register(App.injector.getInstance(LobbyState.class));
     }
 
 

@@ -7,17 +7,16 @@ import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
-import com.kotcrab.vis.ui.VisUI;
 import com.tebreca.eod.states.GameStateManager;
 import com.tebreca.eod.states.IGameState;
 
 public abstract class AbstractUIState implements IGameState {
 
-    private final GameStateManager stateManager;
-    private final Injector injector;
-    private final FreeTypeFontGenerator fontGenerator;
-    private Stage stage = new Stage();
-    private Table table = new Table();
+    protected final GameStateManager stateManager;
+    protected final Injector injector;
+    protected final FreeTypeFontGenerator fontGenerator;
+    protected Stage stage = new Stage();
+    protected Table table = new Table();
 
     public Stage getStage() {
         return stage;
@@ -45,6 +44,7 @@ public abstract class AbstractUIState implements IGameState {
 
     @Override
     public void render() {
+        stateManager.checkqueue();
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
         stage.act(Gdx.graphics.getDeltaTime());
         stage.draw();

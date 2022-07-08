@@ -7,6 +7,7 @@ import java.util.Map;
 public abstract class HashRegistry<T extends IEntry> implements IRegistry<T> {
 
     protected HashRegistry(){
+        addEntries();
         RegistryHandler.addRegistry(this, getTClass());
     }
     Map<String, T> hashMap = new HashMap<>();

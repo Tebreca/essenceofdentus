@@ -1,5 +1,5 @@
 buildscript {
-    
+
 
     repositories {
         mavenLocal()
@@ -7,10 +7,12 @@ buildscript {
         gradlePluginPortal()
         maven { url "https://oss.sonatype.org/content/repositories/snapshots/" }
         google()
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
     }
     dependencies {
-        
-
+        classpath 'org.openjfx:javafx-plugin:0.0.13'
     }
 }
 
@@ -43,7 +45,7 @@ allprojects {
 
 project(":desktop") {
     apply plugin: "java-library"
-
+    apply plugin: "org.openjfx.javafxplugin"
 
     dependencies {
         implementation project(":core")
@@ -57,8 +59,7 @@ project(":desktop") {
 
 project(":core") {
     apply plugin: "java-library"
-
-
+    apply plugin: "org.openjfx.javafxplugin"
     dependencies {
         api "com.badlogicgames.gdx:gdx:$gdxVersion"
         api "com.badlogicgames.gdx:gdx-bullet:$gdxVersion"
@@ -67,7 +68,7 @@ project(":core") {
         implementation 'com.github.czyzby:gdx-lml-vis:1.9.1.9.6'
         implementation 'com.google.inject:guice:5.1.0'
         implementation 'com.google.code.gson:gson:2.9.0'
-        implementation 'kryonet:kryonet:2.21-2'
+        implementation 'com.github.crykn:kryonet:2.22.7'
         implementation 'log4j:log4j:1.2.17'
     }
 }

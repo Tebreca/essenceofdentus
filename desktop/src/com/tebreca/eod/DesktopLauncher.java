@@ -17,6 +17,6 @@ public class DesktopLauncher {
 		} else {
 			config.setWindowedMode(DesktopLauncher.settings.getWidth(), DesktopLauncher.settings.getHeight());
 		}
-		new Lwjgl3Application(new App(), config);
+		new Lwjgl3Application(App.getInstance(), config);
 	}
 }

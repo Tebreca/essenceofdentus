@@ -16,4 +16,5 @@ public interface IRegistry<T extends IEntry> {
 
     boolean contains(String key);
 
+    void addEntries();
 }

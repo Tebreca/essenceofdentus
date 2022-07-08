@@ -74,6 +74,8 @@ public class MainMenuState extends AbstractUIState {
         table.add(settings).width(stage.getWidth() * 0.2f);
         table.row().height(stage.getHeight() * 0.1f);
         Label host1 = new Label("Host", new Label.LabelStyle(font, Color.WHITE));
+        if (App.getInstance().serverEnabled())
+            host1.setText("Stop Server");
         Button host = new Button(host1, VisUI.getSkin());
         host.addListener(new ClickListener() {
             @Override
@@ -93,10 +95,7 @@ public class MainMenuState extends AbstractUIState {
         join.addListener(new ClickListener() {
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                if (App.getInstance().getServerThread() != null) {
-                   App.getInstance().connect();
-                }
-                //todo: connection
+                stateManager.setCurrentState(injector.getInstance(JoinState.class));
             }
         });
         table.add(join).width(stage.getWidth() * 0.2f);
@@ -117,7 +116,7 @@ public class MainMenuState extends AbstractUIState {
 
             @Override
             public boolean keyDown(InputEvent event, int keycode) {
-                if(keycode == Input.Keys.ESCAPE){
+                if (keycode == Input.Keys.ESCAPE) {
                     Gdx.app.exit();
                 }
                 return true;
