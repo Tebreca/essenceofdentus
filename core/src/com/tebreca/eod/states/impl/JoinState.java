@@ -15,6 +15,7 @@ import com.google.inject.Injector;
 import com.google.inject.Singleton;
 import com.kotcrab.vis.ui.VisUI;
 import com.tebreca.eod.App;
+import com.tebreca.eod.helper.config.Settings;
 import com.tebreca.eod.states.GameStateManager;
 
 import java.util.ArrayList;
@@ -33,8 +34,8 @@ public class JoinState extends AbstractUIState {
     List<TimerTask> clears = new ArrayList<>();
 
     @Inject
-    public JoinState(GameStateManager stateManager, Injector injector, FreeTypeFontGenerator fontGenerator) {
-        super(stateManager, injector, fontGenerator);
+    public JoinState(GameStateManager stateManager, Injector injector, FreeTypeFontGenerator fontGenerator, Settings settings) {
+        super(stateManager, injector, fontGenerator, settings);
     }
 
     @Override

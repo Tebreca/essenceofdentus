@@ -8,31 +8,36 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
 import com.tebreca.eod.App;
+import com.tebreca.eod.client.texture.CharacterTextureData;
+import com.tebreca.eod.client.texture.TextureSheet;
 import com.tebreca.eod.common.Player;
+import com.tebreca.eod.common.character.Character;
+import com.tebreca.eod.common.character.CharacterRegistry;
 import com.tebreca.eod.packet.PacketRule;
 import com.tebreca.eod.packet.RuleRegistry;
-import com.tebreca.eod.packet.rules.JoinRule;
-import com.tebreca.eod.packet.rules.PlayerListRule;
+import com.tebreca.eod.packet.rules.*;
 import com.tebreca.eod.states.GameStateManager;
-import com.tebreca.eod.states.impl.JoinState;
-import com.tebreca.eod.states.impl.LobbyState;
+import com.tebreca.eod.states.impl.*;
 import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.net.InetAddress;
-import java.util.UUID;
+import java.util.*;
 
 @Singleton
 public class NeoClient implements Listener {
 
     private final Injector injector;
-    private String username = "tebreca";
-    private String userID = UUID.randomUUID().toString();
+    public String username = "tebreca";
+    public String userID = UUID.randomUUID().toString();
     private static final Logger logger = Logger.getLogger(NeoClient.class);
+    public Map<Character, TextureSheet> characterTextureSheets = new HashMap<>();
 
+    private Connection connection;
     Client client = new Client();
     Thread clientThread = new Thread(client);
     private GameStateManager stateManager;
+    private boolean exiting = false;
 
     public Player[] getPlayers() {
         return players;
@@ -55,10 +60,21 @@ public class NeoClient implements Listener {
             rule.register(clientKryo);
         }
         client.addListener(this);
+
+        CharacterRegistry characterRegistry = injector.getInstance(CharacterRegistry.class);
+        for (Character character : characterRegistry.getAllUnordered()) {
+            Optional<CharacterTextureData> data = TextureSheetReader.getForCharacter(character);
+            if (data.isEmpty()) {
+                continue;
+            }
+            TextureSheet sheet = TextureSheetReader.from(data.get());
+            characterTextureSheets.put(character, sheet);
+        }
     }
 
 
     public void connect(InetAddress address) {
+        exiting = false;
         try {
             client.connect(5000, address, App.TCP_PORT, App.UDP_PORT);
         } catch (IOException e) {
@@ -71,11 +87,12 @@ public class NeoClient implements Listener {
     }
 
     public void connect(String ip, int tcpPort, int udpPort) {
+        exiting = false;
         try {
             client.connect(5000, ip, tcpPort, udpPort);
         } catch (IOException e) {
             logger.error("Exception thrown when trying to connect to Server; ", e);
-            if (stateManager.getCurrentState() instanceof JoinState state){
+            if (stateManager.getCurrentState() instanceof JoinState state) {
                 state.error(e.getMessage());
             }
         }
@@ -83,7 +100,8 @@ public class NeoClient implements Listener {
     }
 
     public void disconnect() {
-        client.stop();
+        exiting = true;
+        connection.close();
     }
 
     public void shutdown() {
@@ -97,13 +115,71 @@ public class NeoClient implements Listener {
             if (response.getStatus() != JoinRule.Response.Status.WELCOME) {
                 onFailedConnect(response.getStatus());
                 connection.close();
-            } else {
-                stateManager.getStateQueue().add(() -> injector.getInstance(LobbyState.class));
-                //TODO
+                return;
             }
-        } else if(o instanceof PlayerListRule rule){
+            stateManager.getStateQueue().add(() -> injector.getInstance(LobbyState.class));
+            return;
+        }
+        if (o instanceof PlayerListRule rule) {
             players = rule.players();
+            return;
+        }
+        if (o instanceof JoinTeamRule.Response response) {
+            if (response.ok()) {
+                if (stateManager.getCurrentState() instanceof PreGameState state) {
+                    state.playerJoins(response.rule().teamId(), getPlayer(response.rule().userId()));
+                } else {
+                    stateManager.getStateQueue().add(() -> preGameStateSupplier(response));
+                }
+            }
+            return;
+        }
+        if (o instanceof StartPreGameRule rule) {
+            stateManager.getStateQueue().add(() -> {
+                PreGameState instance = injector.getInstance(PreGameState.class);
+                instance.setTimer(rule.startTime());
+                return instance;
+            });
+            return;
+        }
+        if (o instanceof StartChampSelectRule rule) {
+            stateManager.getStateQueue().add(() -> {
+                ChampSelectState instance = injector.getInstance(ChampSelectState.class);
+                instance.setOrangeTeam(Arrays.stream(rule.orangeTeam()).map(this::getPlayer).toArray(Player[]::new));
+                instance.setPurpleTeam(Arrays.stream(rule.purpleTeam()).map(this::getPlayer).toArray(Player[]::new));
+                instance.setTimer(rule.executionTime());
+                return instance;
+            });
+            return;
+        }
+        if (o instanceof SelectChampRule.Response response) {
+            if (!response.ok()) {
+                return;
+            }
+            if (stateManager.getCurrentState() instanceof ChampSelectState state) {
+                state.selectChamp(response.rule());
+            }
+            return;
+        }
+        if (o instanceof StartGameRule rule) {
+            stateManager.getStateQueue().add(() -> {
+                InGamestate instance = injector.getInstance(InGamestate.class);
+                //todo
+                return instance;
+            });
+        }
 
+    }
+
+    @Override
+    public void connected(Connection connection) {
+        this.connection = connection;
+    }
+
+    @Override
+    public void disconnected(Connection connection) {
+        if (!exiting) {
+            onFailedConnect(JoinRule.Response.Status.SERVER_ERROR);
         }
     }
 
@@ -111,22 +187,45 @@ public class NeoClient implements Listener {
         return client.discoverHost(App.TCP_PORT, App.UDP_PORT);
     }
 
-    public void onFailedConnect(JoinRule.Response.Status status){
+    public void onFailedConnect(JoinRule.Response.Status status) {
         logger.warn(status.getError());
-        if (stateManager.getCurrentState() instanceof JoinState state){
+        if (stateManager.getCurrentState() instanceof JoinState state) {
             state.error(status.getError());
         } else {
-            stateManager.getStateQueue().add(()->supplier(status));
+            stateManager.getStateQueue().add(() -> joinStateSupplier(status));
         }
     }
 
-    private JoinState supplier(JoinRule.Response.Status status){
+    private JoinState joinStateSupplier(JoinRule.Response.Status status) {
         JoinState state = injector.getInstance(JoinState.class);
         state.error(status.getError());
         return state;
     }
 
+    private PreGameState preGameStateSupplier(JoinTeamRule.Response response) {
+        PreGameState state = injector.getInstance(PreGameState.class);
+        state.playerJoins(response.rule().teamId(), getPlayer(response.rule().userId()));
+        return state;
+    }
+
+    public Player getPlayer(String userId) {
+        return Arrays.stream(players).filter(p -> p.uuid().equals(userId)).findAny()
+                .orElseThrow(() -> new IllegalArgumentException("Rule described unknown player!"));
+    }
+
     public void setUsername(String text) {
         this.username = text;
+    }
+
+    public void send(Object rule, boolean tcp) {
+        if (tcp)
+            connection.sendTCP(rule);
+        else
+            connection.sendUDP(rule);
+    }
+
+    public void send(Object rule) {
+        send(rule, false);
+
     }
 }

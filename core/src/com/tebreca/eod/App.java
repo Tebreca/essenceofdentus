@@ -22,7 +22,8 @@ import static com.esotericsoftware.minlog.Log.*;
 
 public class App extends ApplicationAdapter {
 
-    public static final Injector injector = Guice.createInjector(new GameModule(), new FontModule());
+    private static final GameModule gameModule = new GameModule();
+    public static final Injector injector = Guice.createInjector(gameModule, new FontModule());
     public static final int TCP_PORT = 12300;
     public static final int UDP_PORT = 12301;
     private static final App app = new App();
@@ -38,6 +39,8 @@ public class App extends ApplicationAdapter {
 
     public void stopServer() {
         server.shutdown();
+        gameModule.setNewServer(true);
+        server = injector.getInstance(NeoServer.class);
         serverThread = null;
     }
 
@@ -99,7 +102,7 @@ public class App extends ApplicationAdapter {
         try {
             client.connect(InetAddress.getByName("localhost"));
         } catch (UnknownHostException e) {
-            logger.error("Couldnt find localhost! ", e);
+            logger.error("Couldn't find localhost! ", e);
         }
     }
 
@@ -119,5 +122,9 @@ public class App extends ApplicationAdapter {
 
     public boolean serverEnabled() {
         return serverThread != null;
+    }
+
+    public void disconnect() {
+        client.disconnect();
     }
 }

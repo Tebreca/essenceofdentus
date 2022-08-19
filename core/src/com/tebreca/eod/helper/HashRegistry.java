@@ -3,6 +3,7 @@ package com.tebreca.eod.helper;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Stream;
 
 public abstract class HashRegistry<T extends IEntry> implements IRegistry<T> {
 
@@ -54,5 +55,10 @@ public abstract class HashRegistry<T extends IEntry> implements IRegistry<T> {
     @Override
     public T getEntry(String key) {
         return this.hashMap.get(key);
+    }
+
+    @Override
+    public Stream<T> stream() {
+        return hashMap.values().stream();
     }
 }

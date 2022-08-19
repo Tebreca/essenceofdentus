@@ -1,7 +1,12 @@
 package com.tebreca.eod.common;
 
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
+import com.tebreca.eod.client.NeoClient;
+
 import java.util.UUID;
 
+@Singleton
 public final class Player {
     private String uuid;
     private String username;
@@ -13,11 +18,16 @@ public final class Player {
         this.username = username;
     }
 
+    @Inject
+    public Player(NeoClient client) {
+        this(UUID.fromString(client.userID), client.username);
+    }
+
     private Player() {
     }
 
-    public UUID uuid() {
-        return UUID.fromString(uuid);
+    public String uuid() {
+        return uuid;
     }
 
     public String username() {
@@ -34,5 +44,13 @@ public final class Player {
 
     public void setUsername(String username) {
         this.username = username;
+    }
+
+    @Override
+    public String toString() {
+        return "Player{" +
+                "uuid='" + uuid + '\'' +
+                ", username='" + username + '\'' +
+                '}';
     }
 }

@@ -4,27 +4,25 @@ import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryonet.Connection;
 import com.esotericsoftware.kryonet.Listener;
 import com.esotericsoftware.kryonet.Server;
-import com.google.inject.Inject;
 import com.google.inject.Injector;
-import com.google.inject.Singleton;
 import com.tebreca.eod.App;
 import com.tebreca.eod.common.Player;
 import com.tebreca.eod.packet.PacketRule;
 import com.tebreca.eod.packet.RuleRegistry;
-import com.tebreca.eod.packet.rules.JoinRule;
-import com.tebreca.eod.packet.rules.PlayerListRule;
+import com.tebreca.eod.packet.rules.*;
 import org.apache.log4j.*;
 import org.apache.log4j.spi.LoggingEvent;
 
 import java.awt.event.ActionEvent;
 import java.util.*;
 
-@Singleton
+
 public class NeoServer implements Runnable, Listener {
 
+    private final GameManager gameManager;
     Server socket = new Server();
     private final Injector injector;
-    private static final Logger logger = Logger.getLogger(NeoServer.class);
+    public static final Logger logger = Logger.getLogger(NeoServer.class);
     ServerUI ui = new ServerUI();
     private boolean enabled = false;
     boolean inGame = false;
@@ -36,15 +34,17 @@ public class NeoServer implements Runnable, Listener {
 
     List<String> bannedUUIDs = new ArrayList<>();
 
-    @Inject
-    public NeoServer(Injector injector) {
+    public AppenderSkeleton appender;
+
+    public NeoServer(Injector injector, GameManager gameManager) {
         this.injector = injector;
+        this.gameManager = gameManager;
     }
 
     public boolean start() throws Exception {
         enabled = true;
         logger.setLevel(Level.INFO);
-        logger.addAppender(new AppenderSkeleton() {
+        appender = new AppenderSkeleton() {
             Layout layout = new PatternLayout("%r [%t] %p %c %x - %m%n");
 
             @Override
@@ -66,7 +66,9 @@ public class NeoServer implements Runnable, Listener {
             public boolean requiresLayout() {
                 return true;
             }
-        });
+        };
+        logger.addAppender(appender);
+        gameManager.setupAppender(appender);
         socket.start();
         Kryo serverKryo = socket.getKryo();
         PacketRule[] rules = injector.getInstance(RuleRegistry.class).getAllUnordered();
@@ -109,17 +111,45 @@ public class NeoServer implements Runnable, Listener {
         if (o instanceof JoinRule rule) {
             if (bannedUUIDs.contains(rule.getUserID())) {
                 connection.sendTCP(JoinRule.Response.banned());
-            } else if (clients.size() == lobbySize && !clients.containsKey(connection)) {
+                return;
+            }
+            if (clients.size() == lobbySize && !clients.containsKey(connection)) {
                 connection.sendTCP(JoinRule.Response.full());
-            } else if (isInGame()) {
+                return;
+            }
+            if (isInGame()) {
                 connection.sendTCP(JoinRule.Response.ingame());
+                return;
+            }
+            connection.sendTCP(JoinRule.Response.ok());
+            Player player = clients.get(connection);
+            player.setUsername(rule.getUsername());
+            player.setUuid(rule.getUserID());
+            sendTCPToAll(new PlayerListRule(clients.values().toArray(Player[]::new)));
+            ui.addPlayer(player);
+            return;
+        }
+        if (o instanceof JoinTeamRule rule) {
+            if (gameManager.hasplayer(rule.userId()))
+                return;
+            if (gameManager.canfitPlayer(rule.teamId())) {
+                gameManager.addToTeam(clients.values().stream().filter(p -> p.uuid().equals(rule.userId()))
+                        .findAny().orElseThrow(() -> new IllegalArgumentException("Rule specified unknown player!")), rule.teamId());
+                sendTCPToAll(rule.ok());
+                logger.info("Teams just got updated!");
+                logger.info(gameManager.orangeTeam);
+                logger.info(gameManager.purpleTeam);
+                return;
+            }
+            connection.sendTCP(rule.negative());
+            return;
+        }
+        if (o instanceof SelectChampRule rule) {
+            boolean flag = gameManager.tryAssignCharacter(rule);
+            if (flag) {
+                sendTCPToAll(rule.ok());
             } else {
-                connection.sendTCP(JoinRule.Response.ok());
-                Player player = clients.get(connection);
-                player.setUsername(rule.getUsername());
-                player.setUuid(rule.getUserID());
-                clients.keySet().forEach(c -> c.sendTCP(new PlayerListRule(clients.values().toArray(Player[]::new))));
-                ui.addPlayer(player);
+                connection.sendTCP(rule.negative());
             }
         }
     }
@@ -143,8 +173,11 @@ public class NeoServer implements Runnable, Listener {
         ui.removePlayer(clients.get(connection));
         logger.info("Client disconnected: " + connection.getRemoteAddressUDP());
         if (enabled) {
+            if (inGame) {
+                gameManager.handleLeave(clients.get(connection));
+            }
             clients.remove(connection);
-            clients.keySet().forEach(c -> c.sendTCP(new PlayerListRule(clients.values().toArray(Player[]::new))));
+            sendTCPToAll(new PlayerListRule(clients.values().toArray(Player[]::new)));
         }
     }
 
@@ -159,8 +192,33 @@ public class NeoServer implements Runnable, Listener {
     }
 
     private void startLobby(ActionEvent event) {
+        if (inGame) {
+            return;
+        }
+        gameManager.setPlayerList(new ArrayList<>(clients.values()));
         inGame = true;
+        TimerTask startgame = new TimerTask() {
+            @Override
+            public void run() {
+                gameManager.startGame();
+                sendTCPToAll(new StartGameRule());
+            }
+        };
+        TimerTask champselect = new TimerTask() {
+            @Override
+            public void run() {
+                gameManager.initTeams();
+                scheduler.schedule(startgame, 20000);
+                sendTCPToAll(new StartChampSelectRule(startgame.scheduledExecutionTime(), gameManager.getIds(1), gameManager.getIds(2)));
+            }
+        };
 
+        scheduler.schedule(champselect, 10000);
+        long startTime = champselect.scheduledExecutionTime();
+        sendTCPToAll(new StartPreGameRule(startTime));
+    }
 
+    public void sendTCPToAll(Object packet) {
+        clients.forEach((c, p) -> c.sendTCP(packet));
     }
 }

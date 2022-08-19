@@ -4,13 +4,18 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.ui.Button;
 import com.badlogic.gdx.scenes.scene2d.ui.Label;
+import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
 import com.kotcrab.vis.ui.VisUI;
+import com.tebreca.eod.App;
 import com.tebreca.eod.client.NeoClient;
 import com.tebreca.eod.common.Player;
+import com.tebreca.eod.helper.config.Settings;
 import com.tebreca.eod.server.NeoServer;
 import com.tebreca.eod.states.GameStateManager;
 
@@ -27,8 +32,8 @@ public class LobbyState extends AbstractUIState{
 
 
     @Inject
-    protected LobbyState(GameStateManager stateManager, Injector injector, FreeTypeFontGenerator fontGenerator, NeoClient client) {
-        super(stateManager, injector, fontGenerator);
+    protected LobbyState(GameStateManager stateManager, Injector injector, FreeTypeFontGenerator fontGenerator, NeoClient client, Settings settings) {
+        super(stateManager, injector, fontGenerator, settings);
         this.client = client;
     }
 
@@ -70,6 +75,16 @@ public class LobbyState extends AbstractUIState{
             this.players.add(label2);
             table.add(label, label2);
         }
+
+        Button leave = new Button(new Label("<- Back to server selection", labelStyle), VisUI.getSkin());
+        stage.addActor(leave);
+        leave.addListener(new ClickListener(){
+            @Override
+            public void clicked(InputEvent event, float x, float y) {
+                stateManager.setCurrentState(injector.getInstance(JoinState.class));
+                App.getInstance().disconnect();
+            }
+        });
     }
 
     public void updatePlayers(Player[] players){
@@ -84,6 +99,7 @@ public class LobbyState extends AbstractUIState{
 
     @Override
     public void disable() {
+        players.clear();
         super.disable();
         VisUI.dispose();
     }

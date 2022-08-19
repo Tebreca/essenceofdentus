@@ -1,4 +1,12 @@
-package com.tebreca.eod.config;
+package com.tebreca.eod.helper.config;
+
+import com.badlogic.gdx.Gdx;
+import com.google.gson.Gson;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+
 
 public class Settings {
 
@@ -7,9 +15,22 @@ public class Settings {
     boolean vsyncEnabled = true;
 
     DisplaySize displaySize = DisplaySize.H1920_1080;
+    private static final Gson GSON = new Gson();
 
-    public static void save() {
-        //TODO
+    public void save() throws IOException {
+        Gdx.graphics.setVSync(vsyncEnabled);
+        if (fullscreen) {
+            Gdx.graphics.setFullscreenMode(Gdx.graphics.getDisplayMode(Gdx.graphics.getMonitor()));
+        } else {
+            Gdx.graphics.setWindowedMode(getWidth(), getHeight());
+        }
+
+        File file = new File("./settings.json");
+        if (!file.exists() && !file.createNewFile())
+            throw new IOException("Failed to create file at; " + file.getPath());
+        FileWriter writer = new FileWriter(file);
+        GSON.toJson(this, writer);
+        writer.close();
     }
 
 

@@ -7,6 +7,7 @@ import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+import com.tebreca.eod.helper.config.Settings;
 import com.tebreca.eod.states.GameStateManager;
 import com.tebreca.eod.states.IGameState;
 
@@ -25,8 +26,9 @@ public abstract class AbstractUIState implements IGameState {
     public Table getTable() {
         return table;
     }
+
     @Inject
-    protected AbstractUIState(GameStateManager stateManager, Injector injector, FreeTypeFontGenerator fontGenerator) {
+    protected AbstractUIState(GameStateManager stateManager, Injector injector, FreeTypeFontGenerator fontGenerator, Settings settings) {
         this.stateManager = stateManager;
         this.injector = injector;
         this.fontGenerator = fontGenerator;
@@ -39,7 +41,7 @@ public abstract class AbstractUIState implements IGameState {
     @Override
     public void resize(int width, int height) {
         stage.getViewport().update(width, height, true);
-
+        table.setSize(width, height);
     }
 
     @Override

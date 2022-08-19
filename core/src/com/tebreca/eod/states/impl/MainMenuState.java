@@ -19,6 +19,7 @@ import com.google.inject.Injector;
 import com.google.inject.Singleton;
 import com.kotcrab.vis.ui.VisUI;
 import com.tebreca.eod.App;
+import com.tebreca.eod.helper.config.Settings;
 import com.tebreca.eod.states.GameStateManager;
 
 import java.util.logging.Logger;
@@ -35,8 +36,8 @@ public class MainMenuState extends AbstractUIState {
     private BitmapFont font;
 
     @Inject
-    public MainMenuState(GameStateManager stateManager, Injector injector, FreeTypeFontGenerator fontGenerator) {
-        super(stateManager, injector, fontGenerator);
+    public MainMenuState(GameStateManager stateManager, Injector injector, FreeTypeFontGenerator fontGenerator, Settings settings) {
+        super(stateManager, injector, fontGenerator, settings);
         this.stateManager = stateManager;
         this.injector = injector;
         this.fontGenerator = fontGenerator;

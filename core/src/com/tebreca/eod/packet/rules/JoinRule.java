@@ -34,7 +34,7 @@ public class JoinRule {
 
 
         public enum Status {
-            WELCOME, FULL, INGAME, TIMEOUT, BANNED;
+            WELCOME, FULL, INGAME, TIMEOUT, BANNED, SERVER_ERROR;
 
             public String getError() {
                 return switch (this) {
@@ -43,6 +43,7 @@ public class JoinRule {
                     case INGAME -> "Server is already ingame!";
                     case TIMEOUT -> "You've been timed out!";
                     case BANNED -> "You're banned from this server!";
+                    case SERVER_ERROR -> "Fatal error in connection!";
                 };
             }
         }

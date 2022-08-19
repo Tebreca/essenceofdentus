@@ -1,6 +1,7 @@
 package com.tebreca.eod.helper;
 
 import java.util.Map;
+import java.util.stream.Stream;
 
 public interface IRegistry<T extends IEntry> {
 
@@ -17,4 +18,6 @@ public interface IRegistry<T extends IEntry> {
     boolean contains(String key);
 
     void addEntries();
+
+    Stream<T> stream();
 }

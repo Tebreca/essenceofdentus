@@ -2,9 +2,7 @@ package com.tebreca.eod.states;
 
 import com.tebreca.eod.App;
 import com.tebreca.eod.helper.HashRegistry;
-import com.tebreca.eod.states.impl.LobbyState;
-import com.tebreca.eod.states.impl.MainMenuState;
-import com.tebreca.eod.states.impl.SettingsState;
+import com.tebreca.eod.states.impl.*;
 
 public class StateRegistry extends HashRegistry<IGameState> {
 
@@ -27,6 +25,9 @@ public class StateRegistry extends HashRegistry<IGameState> {
         register(App.injector.getInstance(MainMenuState.class));
         register(App.injector.getInstance(SettingsState.class));
         register(App.injector.getInstance(LobbyState.class));
+        register(App.injector.getInstance(JoinState.class));
+        register(App.injector.getInstance(PreGameState.class));
+        register(App.injector.getInstance(ChampSelectState.class));
     }
 
 

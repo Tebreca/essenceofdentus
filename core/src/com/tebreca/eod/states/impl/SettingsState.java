@@ -14,8 +14,10 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
 import com.kotcrab.vis.ui.VisUI;
-import com.tebreca.eod.config.Settings;
+import com.tebreca.eod.helper.config.Settings;
 import com.tebreca.eod.states.GameStateManager;
+
+import java.io.IOException;
 
 @Singleton
 public class SettingsState extends AbstractUIState {
@@ -30,7 +32,7 @@ public class SettingsState extends AbstractUIState {
 
     @Inject
     protected SettingsState(GameStateManager stateManager, Injector injector, FreeTypeFontGenerator fontGenerator, Settings settings) {
-        super(stateManager, injector, fontGenerator);
+        super(stateManager, injector, fontGenerator, settings);
         this.stateManager = stateManager;
         this.injector = injector;
         this.fontGenerator = fontGenerator;
@@ -53,7 +55,6 @@ public class SettingsState extends AbstractUIState {
         Gdx.input.setInputProcessor(stage);
         Gdx.input.setInputProcessor(stage);
         Label title = new Label("Settings", new Label.LabelStyle(titleFont, Color.WHITE));
-        title.setColor(Color.WHITE);
         table.add(title);
         table.row().height(stage.getHeight() * 0.2f);
         Label.LabelStyle labelStyle = new Label.LabelStyle(font, Color.WHITE);
@@ -104,7 +105,11 @@ public class SettingsState extends AbstractUIState {
         save.addListener(new ClickListener(){
             @Override
             public void clicked(InputEvent event, float x, float y) {
-                Settings.save();
+                try {
+                    settings.save();
+                } catch (IOException e) {
+                    e.printStackTrace();//TODO logger
+                }
                 stateManager.setCurrentState(injector.getInstance(MainMenuState.class));
             }
         });
