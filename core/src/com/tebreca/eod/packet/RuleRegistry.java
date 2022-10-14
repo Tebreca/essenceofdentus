@@ -19,11 +19,13 @@ public class RuleRegistry extends HashRegistry<PacketRule> {
         register(new PacketRule(PlayerListRule.class, Player[].class));
         register(new PacketRule(StartChampSelectRule.class, String[].class));
         register(new PacketRule(SelectChampRule.class, SelectChampRule.Response.class));
+        register(new PacketRule(LoadedIntoGameRule.class, LoadedIntoGameRule.Response.class));
 
         register(new OneWayRule(Player.class));
         register(new OneWayRule(StartPreGameRule.class));
         register(new OneWayRule(StartGameRule.class));
         register(new OneWayRule(TeamSyncRule.class));
+
     }
 
     @Inject

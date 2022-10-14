@@ -17,8 +17,10 @@ import org.apache.log4j.PatternLayout;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.Timer;
+import java.util.TimerTask;
 
-import static com.esotericsoftware.minlog.Log.*;
+import static com.esotericsoftware.minlog.Log.LEVEL_INFO;
 
 public class App extends ApplicationAdapter {
 
@@ -32,6 +34,7 @@ public class App extends ApplicationAdapter {
     NeoClient client;
     GameStateManager stateManager;
     private Thread clientThread;
+    private Timer timer;
 
     public void setUsername(String text) {
         client.setUsername(text);
@@ -56,7 +59,7 @@ public class App extends ApplicationAdapter {
 
     @Override
     public void create() {
-        Log.set(LEVEL_ERROR);
+        Log.set(LEVEL_INFO);
         Logger root = Logger.getRootLogger();
         root.addAppender(new ConsoleAppender(new PatternLayout("%r [%t] %p %c %x - %m%n")));
         root.setLevel(Level.INFO);
@@ -64,6 +67,26 @@ public class App extends ApplicationAdapter {
         this.stateManager.setCurrentState(injector.getInstance(IGameState.class));
         this.client = injector.getInstance(NeoClient.class);
         this.client.start();
+        if (isQuickRun()) {
+            timer = new Timer();
+            startServer();
+            timer.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    connect();
+                }
+            }, 2000);
+            timer.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    server.startLobby(null, true);
+                }
+            }, 3500);
+        }
+    }
+
+    private boolean isQuickRun() {
+        return System.getenv().containsKey("QUICKRUN");
     }
 
     @Override
@@ -88,7 +111,7 @@ public class App extends ApplicationAdapter {
         serverThread = thread;
     }
 
-    public void startServer() {
+    public synchronized void startServer() {
         this.server = injector.getInstance(NeoServer.class);
         this.serverThread = new Thread(server);
         serverThread.setName("Server-Thread");

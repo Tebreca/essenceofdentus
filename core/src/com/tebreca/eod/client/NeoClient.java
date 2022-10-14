@@ -73,7 +73,7 @@ public class NeoClient implements Listener {
     }
 
 
-    public void connect(InetAddress address) {
+    public synchronized void connect(InetAddress address) {
         exiting = false;
         try {
             client.connect(5000, address, App.TCP_PORT, App.UDP_PORT);
@@ -86,7 +86,7 @@ public class NeoClient implements Listener {
         client.sendTCP(new JoinRule(userID, username));
     }
 
-    public void connect(String ip, int tcpPort, int udpPort) {
+    public synchronized void connect(String ip, int tcpPort, int udpPort) {
         exiting = false;
         try {
             client.connect(5000, ip, tcpPort, udpPort);
@@ -167,6 +167,11 @@ public class NeoClient implements Listener {
                 //todo
                 return instance;
             });
+        }
+        if (o instanceof LoadedIntoGameRule.Response response){
+            if (stateManager.getCurrentState() instanceof InGamestate state){
+                state.markReady();
+            }
         }
 
     }

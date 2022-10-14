@@ -15,6 +15,7 @@ import com.tebreca.eod.common.Player;
 import com.tebreca.eod.common.character.Character;
 import com.tebreca.eod.common.character.CharacterRegistry;
 import com.tebreca.eod.packet.rules.SelectChampRule;
+import com.tebreca.eod.states.GameStateManager;
 import com.tebreca.eod.states.IGameState;
 import org.apache.log4j.Logger;
 
@@ -37,6 +38,7 @@ public class ChampSelectState implements IGameState {
     private final BitmapFont namefont;
     private final BitmapFont descriptionfont;
     private final CharacterRegistry characterRegistry;
+    private final GameStateManager stateManager;
     Texture picked = new Texture("./textures/picked.png");
     Texture unknown = new Texture("./textures/unknown.png");
     Player[] orangeTeam = new Player[0];
@@ -56,7 +58,7 @@ public class ChampSelectState implements IGameState {
     private long executionTime;
 
     @Inject
-    public ChampSelectState(NeoClient client, FreeTypeFontGenerator fontGenerator, CharacterRegistry registry) {
+    public ChampSelectState(NeoClient client, FreeTypeFontGenerator fontGenerator, CharacterRegistry registry, GameStateManager stateManager) {
         this.client = client;
         textureSheets = new HashMap<>();
         client.characterTextureSheets.forEach((c, t) -> textureSheets.put(c, t.get("sprite").orElseThrow()));
@@ -72,6 +74,7 @@ public class ChampSelectState implements IGameState {
         width = Gdx.graphics.getWidth();
 
         characterRegistry = registry;
+        this.stateManager = stateManager;
     }
 
 
@@ -114,6 +117,7 @@ public class ChampSelectState implements IGameState {
         spriteBatch.begin();
         renderView(spriteBatch);
         spriteBatch.end();
+        stateManager.checkqueue();
     }
 
     private void updateMouse() {
@@ -209,12 +213,14 @@ public class ChampSelectState implements IGameState {
 
     @Override
     public void enable() {
-
+        spriteBatch = new SpriteBatch();
     }
 
     @Override
     public void disable() {
-
+        logger.info("Exiting Character select!");
+        spriteBatch.dispose();
+        Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
     }
 
     public void selectChamp(SelectChampRule rule) {

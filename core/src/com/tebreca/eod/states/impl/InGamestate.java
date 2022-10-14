@@ -1,27 +1,34 @@
 package com.tebreca.eod.states.impl;
 
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.Camera;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.tebreca.eod.client.NeoClient;
+import com.tebreca.eod.packet.rules.LoadedIntoGameRule;
 import com.tebreca.eod.states.IGameState;
+import org.apache.log4j.Logger;
 
 @Singleton
 public class InGamestate implements IGameState {
 
-    Camera camera;
+    private final NeoClient client;
+    OrthographicCamera camera;
     SpriteBatch batch;
-    Texture texture = new Texture("textures/testworld.png");
+    Texture texture = new Texture("./textures/testworld.png");
+    private Logger logger;
+
+    boolean inputEnabled = false;
 
     @Inject
-    public InGamestate() {
-        this.camera = new OrthographicCamera(Gdx.graphics.getHeight(), Gdx.graphics.getHeight());
+    public InGamestate(NeoClient client) {
+        this.camera = new OrthographicCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         this.batch = new SpriteBatch();
-        batch.setProjectionMatrix(camera.combined);
+        this.client = client;
     }
 
     @Override
@@ -38,11 +45,24 @@ public class InGamestate implements IGameState {
 
     @Override
     public void render() {
+        if (inputEnabled)
+            handleinput();
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-
+        batch.setProjectionMatrix(camera.combined);
         batch.begin();
         drawScene();
         batch.end();
+    }
+
+    private void handleinput() {
+        float x = 0;
+        float y = 0;
+        float deltaTime = Gdx.graphics.getDeltaTime();
+        x -= Gdx.input.isKeyPressed(Input.Keys.A) ? 1 : 0;
+        x += Gdx.input.isKeyPressed(Input.Keys.D) ? 1 : 0;
+        y -= Gdx.input.isKeyPressed(Input.Keys.S) ? 1 : 0;
+        y += Gdx.input.isKeyPressed(Input.Keys.W) ? 1 : 0;
+        camera.translate(x * deltaTime, y * deltaTime);
     }
 
     private void drawScene() {
@@ -52,11 +72,21 @@ public class InGamestate implements IGameState {
 
     @Override
     public void enable() {
+        this.logger = Logger.getLogger(InGamestate.class);
+        logger.info("Joining game world");
 
+
+        //do loading
+        client.send(new LoadedIntoGameRule());
     }
 
     @Override
     public void disable() {
 
+    }
+
+    public void markReady() {
+        inputEnabled = true;
+        logger.info("Game has Started");
     }
 }

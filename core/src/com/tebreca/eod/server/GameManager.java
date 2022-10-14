@@ -20,6 +20,8 @@ public class GameManager {
     private static final Logger logger = Logger.getLogger(GameManager.class);
     private final CharacterRegistry characterRegistry;
 
+    private final ClientStateManager clientStateManager = new ClientStateManager();
+
     @Inject
     public GameManager(CharacterRegistry registry) {
         characterRegistry = registry;
@@ -33,6 +35,7 @@ public class GameManager {
 
     public void setPlayerList(List<Player> playerList) {
         this.playerList = playerList;
+        clientStateManager.setPlayerList(playerList);
     }
 
     List<Player> orangeTeam = new ArrayList<>();
@@ -124,5 +127,22 @@ public class GameManager {
     Player getFromId(String id) {
         return Stream.concat(orangeTeam.stream(), purpleTeam.stream()).filter(player -> player.uuid().equals(id)).findAny()
                 .orElseThrow((() -> new IllegalArgumentException("No player found")));
+    }
+
+    public boolean markLoaded(Player player) {
+        return clientStateManager.markLoaded(player);
+    }
+
+    private static class ClientStateManager {
+        private List<Player> players;
+
+        public void setPlayerList(List<Player> playerList) {
+            players = playerList;
+        }
+
+        public boolean markLoaded(Player player) {
+            players.remove(player);
+            return players.isEmpty();
+        }
     }
 }

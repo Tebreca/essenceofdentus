@@ -41,7 +41,7 @@ public class NeoServer implements Runnable, Listener {
         this.gameManager = gameManager;
     }
 
-    public boolean start() throws Exception {
+    public synchronized boolean start() throws Exception {
         enabled = true;
         logger.setLevel(Level.INFO);
         appender = new AppenderSkeleton() {
@@ -151,6 +151,13 @@ public class NeoServer implements Runnable, Listener {
             } else {
                 connection.sendTCP(rule.negative());
             }
+        } if (o instanceof LoadedIntoGameRule rule){
+            Player player = clients.get(connection);
+            logger.info("Player " + player.username() + " succesfully loaded in!");
+            if(gameManager.markLoaded(player)){
+                logger.info("All players loaded in succesfully! Game starting!");
+                sendTCPToAll(new LoadedIntoGameRule.Response());
+            }
         }
     }
 
@@ -191,7 +198,7 @@ public class NeoServer implements Runnable, Listener {
         socket.close();
     }
 
-    private void startLobby(ActionEvent event) {
+    public void startLobby(ActionEvent event, boolean quickstart) {
         if (inGame) {
             return;
         }
@@ -208,14 +215,18 @@ public class NeoServer implements Runnable, Listener {
             @Override
             public void run() {
                 gameManager.initTeams();
-                scheduler.schedule(startgame, 20000);
+                scheduler.schedule(startgame, quickstart ? 3000 : 20000);
                 sendTCPToAll(new StartChampSelectRule(startgame.scheduledExecutionTime(), gameManager.getIds(1), gameManager.getIds(2)));
             }
         };
 
-        scheduler.schedule(champselect, 10000);
+        scheduler.schedule(champselect, quickstart ? 2000 : 10000);
         long startTime = champselect.scheduledExecutionTime();
         sendTCPToAll(new StartPreGameRule(startTime));
+    }
+
+    public void startLobby(ActionEvent event) {
+        this.startLobby(event, false);
     }
 
     public void sendTCPToAll(Object packet) {

@@ -14,6 +14,7 @@ buildscript {
     dependencies {
         classpath 'org.openjfx:javafx-plugin:0.0.13'
     }
+
 }
 
 allprojects {
@@ -41,6 +42,7 @@ allprojects {
         maven { url "https://jitpack.io" }
         maven { url 'https://repo.spring.io/snapshot' }
     }
+
 }
 
 project(":desktop") {
@@ -54,7 +56,7 @@ project(":desktop") {
         api "com.badlogicgames.gdx:gdx-bullet-platform:$gdxVersion:natives-desktop"
         api "com.badlogicgames.gdx-controllers:gdx-controllers-desktop:$gdxControllersVersion"
         api "com.badlogicgames.gdx:gdx-freetype-platform:$gdxVersion:natives-desktop"
-        implementation 'com.google.inject:guice:5.1.0'
+        api 'com.google.inject:guice:5.1.0'
     }
 }
 
@@ -66,10 +68,35 @@ project(":core") {
         api "com.badlogicgames.gdx:gdx-bullet:$gdxVersion"
         api "com.badlogicgames.gdx-controllers:gdx-controllers-core:$gdxControllersVersion"
         api 'com.badlogicgames.gdx:gdx-freetype:1.11.0'
-        implementation 'com.github.czyzby:gdx-lml-vis:1.9.1.9.6'
-        implementation 'com.google.inject:guice:5.1.0'
-        implementation 'com.google.code.gson:gson:2.9.0'
-        implementation 'com.github.crykn:kryonet:2.22.7'
-        implementation 'log4j:log4j:1.2.17'
+        api 'com.github.czyzby:gdx-lml-vis:1.9.1.9.6'
+        api 'com.google.inject:guice:5.1.0'
+        api 'com.google.code.gson:gson:2.9.0'
+        api 'com.github.crykn:kryonet:2.22.7'
+        api 'log4j:log4j:1.2.17'
+    }
+}
+
+
+project(":tests") {
+    apply plugin: "java"
+
+    sourceSets.test.java.srcDirs = ["src/"]
+
+    dependencies {
+
+        implementation project(":core")
+
+        implementation "junit:junit:4.+"
+        implementation "org.mockito:mockito-all:1.9.+"
+
+        implementation "com.badlogicgames.gdx:gdx-backend-headless:$gdxVersion"
+        implementation "com.badlogicgames.gdx:gdx:$gdxVersion"
+
+        testImplementation 'junit:junit:4.+'
+        testImplementation "org.mockito:mockito-all:1.9.+"
+
+        testImplementation "com.badlogicgames.gdx:gdx-backend-headless:$gdxVersion"
+        testImplementation "com.badlogicgames.gdx:gdx:$gdxVersion"
+        testImplementation "com.badlogicgames.gdx:gdx-platform:$gdxVersion:natives-desktop"
     }
 }
