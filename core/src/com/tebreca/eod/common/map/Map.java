@@ -12,6 +12,8 @@ public final class Map {
 
     private String texture;
 
+    private int width;
+    private int height;
 
     public Map(Position[] team1spawns, Position[] team2spawns, Hitbox[] hitboxes, String texture) {
         this.team1spawns = team1spawns;
@@ -74,5 +76,13 @@ public final class Map {
 
     public void setTexture(String texture) {
         this.texture = texture;
+    }
+
+    public int getHeight() {
+        return height;
+    }
+
+    public int getWidth() {
+        return width;
     }
 }
